@@ -1,19 +1,18 @@
 import re
 import fitz
 
-def search_components():
+def search_components(target_page):
     pdf = fitz.open("file.pdf")
-    print("File opened")
-
     text = ""
+    page_idx = target_page - 1
+    pages = pdf[page_idx]
 
-    for page in pdf:
-        text += page.get_text()
+    text = pages.get_text()
 
-    pattern = r'\b[A-Z]{1,4}\d*\b' #optional numbers
+    pattern = r'\b\d*[A-Z]{1,4}\d*\b' #optional numbers
 
     components = re.findall(pattern, text)
 
-    print("Components found")
+    print(f"Components found on page {target_page}: {len(components)}")
 
     return components
