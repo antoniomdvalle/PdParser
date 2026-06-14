@@ -4,7 +4,8 @@ import customtkinter as ctk
 from tkinter import filedialog
 import os
 import re
-
+import subprocess
+from pathlib import Path
 
 # theme and appearance
 ctk.set_default_color_theme("dark-blue") # blue, green, dark-blue
@@ -37,6 +38,10 @@ class PdParser(ctk.CTk):
         # 4. Run button
         self.btn_run = ctk.CTkButton(self, text="Extract components", command=self.run_parser)
         self.btn_run.pack(pady=10)
+
+        # 5. Confirmation label
+        self.label_confirmation=ctk.CTkLabel(self, text="")
+        self.label_confirmation.pack(pady=5)
 
 
 
@@ -149,7 +154,14 @@ class PdParser(ctk.CTk):
         df.sort_values(by='Components', inplace=True) # se quiser de Z-A, bota inplace=False
         df.to_excel("components.xlsx", index=False, header=False)
 
+        saida = Path("components.xlsx").resolve()
+
         print("Converted sucessfully.")
+
+        subprocess.Popen(f'explorer /select,"{saida}"')
+
+        self.label_confirmation.configure(text="Conversion ocurred sucessfully!")
+        
 
 if __name__ == "__main__":
     app = PdParser()
