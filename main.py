@@ -11,13 +11,60 @@ from pathlib import Path
 ctk.set_default_color_theme("dark-blue") # blue, green, dark-blue
 ctk.set_appearance_mode("system") # dark, light, system
 
+
 class PdParser(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.geometry("600x450")
         self.title("PdParser")
+        self.iconbitmap("assets/icon.ico")
+
+        self.lbl_title=ctk.CTkLabel(self, text="Welcome!")
+        self.lbl_title.pack(pady=50)
+
+        self.lbl_title=ctk.CTkLabel(self, text="Choose an action:")
+        self.lbl_title.pack(pady=5)
+        
+        # 0. - SCREEN SWITCHING
+        self.btn_acess_components=ctk.CTkButton(self, text="Extract components", command=self.open_components)
+        self.btn_acess_components.pack(pady=15)
+
+        self.btn_acess_wires=ctk.CTkButton(self, text="Extract wires", command=self.open_wires)
+        self.btn_acess_wires.pack(pady=15)
+
+    def open_components(self):
+        next_window = ComponentPdParser()
+
+        self.destroy()
+
+        next_window.mainloop()
+
+    def open_wires(self):
+        next_window = WirePdParser()
+
+        self.destroy()
+
+        next_window.mainloop()
+
+
+    
+
+
+class ComponentPdParser(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+        self.geometry("600x450")
+        self.title("Component Extraction - PdParser")
 
         self.iconbitmap("assets/icon.ico")
+
+
+
+        # 0. Main screen button
+        self.btn_main_screen=ctk.CTkButton(self, text="Back to main screen", command=self.open_main_screen)
+        self.btn_main_screen.pack(pady=15)
+        
+
 
         # 1. File browsing
         file_path = ""
@@ -43,7 +90,12 @@ class PdParser(ctk.CTk):
         self.label_confirmation=ctk.CTkLabel(self, text="")
         self.label_confirmation.pack(pady=5)
 
+    def open_main_screen(self):
+        next_window = PdParser()
 
+        self.destroy()
+
+        next_window.mainloop()
 
     def choose_file(self):
             file_path = filedialog.askopenfilename(
@@ -100,14 +152,16 @@ class PdParser(ctk.CTk):
         df = pd.DataFrame(components, columns=['Components'])
 
         # WHITELIST
-        valid_prefixes = ('K', 'Q', 'M', 'F', 'X', '1CX', '2CX', 'S', 'L', 'CLP', 'PLC', 'IHM', 'HMI', 'TX', 'B', 'G', 'ED', 'EA')
-        df = df[df['Components'].str.startswith(valid_prefixes, na=False)]
+        valid_prefixes = ('1','2','3','4','5','6','7','8','9','0','K', 'Q', 'M', 'F', 'X', '1CX', '2CX', 'S', 'L', 'CLP', 
+        'PLC', 'IHM', 'HMI', 'TX', 'B', 'G', 'ED', 'EA','RL','RLS')
+        df = df[df['Components'].str.startswith(valid_prefixes, na
+        =False)]
 
         #BLACKLIST
         invalid_terms = [
             # --- SINGLE LETTERS / SHORT NOISE ---
             # Grid layout coordinates, single zones, or stray letters
-            'B', 'F', 'M', 'S',
+            'B', 'F', 'M',
 
             # --- DIMENSIONS & GEOMETRY ---
             # Measurements, physical scales, and sheet sizes
@@ -162,6 +216,51 @@ class PdParser(ctk.CTk):
 
         self.label_confirmation.configure(text="Conversion ocurred sucessfully!")
         
+class WirePdParser(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+        self.geometry("600x450")
+        self.title("Wire PdParser")
+        
+        self.iconbitmap("assets/icon.ico")
+
+
+
+        # 0. Main screen button
+        self.btn_main_screen=ctk.CTkButton(self, text="Back to main screen", command=self.open_main_screen)
+        self.btn_main_screen.pack(pady=15)
+
+        # 1. File browsing
+        file_path = ""
+        self.btn_browse = ctk.CTkButton(self, text="Select the PDF file", command=self.choose_file)
+        self.btn_browse.pack(pady=20)
+
+        # 2. Checking file browsing
+        self.lbl_file_status = ctk.CTkLabel(self, text="No file selected", text_color="gray")
+        self.lbl_file_status.pack(pady=10)
+
+
+
+    def open_main_screen(self):
+        next_window = PdParser()
+
+        self.destroy()
+
+        next_window.mainloop()
+    
+    def choose_file(self):
+            file_path = filedialog.askopenfilename(
+                title="Select your PDF diagram",
+                filetypes=[("PDF Files", "*.pdf")]
+            )
+
+            if file_path:
+                self.selected_file_path = file_path
+                #os.path.basename = "file.pdf" instead of C:/user/...
+                file_name = os.path.basename(file_path)
+                self.lbl_file_status.configure(text=f"Selected: {file_name}", text_color="white")
+                print(f"File loaded: {file_path}")
+    
 
 if __name__ == "__main__":
     app = PdParser()
