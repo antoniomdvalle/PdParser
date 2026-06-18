@@ -107,8 +107,7 @@ class ComponentPdParser(ctk.CTk):
                 self.selected_file_path = file_path
                 #os.path.basename = "file.pdf" instead of C:/user/...
                 file_name = os.path.basename(file_path)
-                self.lbl_file_status.configure(text=f"Selected: {file_name}", text_color="white")
-                print(f"File loaded: {file_path}")
+                self.lbl_file_status.configure(text=f"Selected: {file_name}", text_color="blue")
     
     def run_parser(self):
         # SAFETY CHECKS
@@ -153,7 +152,7 @@ class ComponentPdParser(ctk.CTk):
 
         # WHITELIST
         valid_prefixes = ('1','2','3','4','5','6','7','8','9','0','K', 'Q', 'M', 'F', 'X', '1CX', '2CX', 'S', 'L', 'CLP', 
-        'PLC', 'IHM', 'HMI', 'TX', 'B', 'G', 'ED', 'EA','RL','RLS')
+        'PLC', 'IHM', 'HMI', 'TX', 'B', 'G', 'ED', 'EA','RL','RLS', 'F', 'IF', 'SW', 'FT')
         df = df[df['Components'].str.startswith(valid_prefixes, na
         =False)]
 
@@ -188,7 +187,7 @@ class ComponentPdParser(ctk.CTk):
 
             # --- ELECTRICAL SPECIFICATIONS & HARDWARE MATERIALS ---
             # Text descriptors next to physical components
-            'ALUM', 'CABO', 'CHAVE', 'COBRE', 'DISJ', 'FIOS', 'PVC', 'TERM',
+            'ALUM', 'CABO', 'CHAVE', 'COBRE', 'DISJ', 'FIOS', 'PVC', 'TERM', '16A',
 
             # --- REVISIONS & NOTES ---
             # Review fields and side annotations
