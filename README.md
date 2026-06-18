@@ -16,10 +16,10 @@ Usual:
 ## Project deadlines:
 
 * Implementation of multiple-page parsing on Components               []
---- Deadline: 17/06/2026
-
-* Implementation of Wire parsing                                      []
 --- Deadline: 19/06/2026
 
-* Implementation of recent files tab                                  []
---- Deadline: 31/07/2026
+* Implementation of Wire parsing                                      []
+--- Deadline: 22/06/2026
+
+* Implementation of error checking                                    []
+--- Deadline: 31/06/2026

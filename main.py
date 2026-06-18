@@ -64,8 +64,6 @@ class ComponentPdParser(ctk.CTk):
         self.btn_main_screen=ctk.CTkButton(self, text="Back to main screen", command=self.open_main_screen)
         self.btn_main_screen.pack(pady=15)
         
-
-
         # 1. File browsing
         file_path = ""
         self.btn_browse = ctk.CTkButton(self, text="Select the PDF file", command=self.choose_file)
@@ -75,20 +73,33 @@ class ComponentPdParser(ctk.CTk):
         self.lbl_file_status = ctk.CTkLabel(self, text="No file selected", text_color="gray")
         self.lbl_file_status.pack(pady=10)
 
-        # 3. Page number input
+        # 3. Check if the user wants all pages
+        self.all_pages_var = ctk.IntVar(value=0)
+        self.chk_all_pages = ctk.CTkCheckBox(self, text="Extract from all pages", variable=self.all_pages_var, command=self.checkbox_event)
+        self.chk_all_pages.pack(pady=15)
+
+        # 4. Page number input
         self.label_page=ctk.CTkLabel(self, text="Enter page number:")
         self.label_page.pack(pady=10)
 
         self.page_entry=ctk.CTkEntry(self, placeholder_text="ex. 50")
         self.page_entry.pack(pady=5)
 
-        # 4. Run button
+        # 5. Run button
         self.btn_run = ctk.CTkButton(self, text="Extract components", command=self.run_parser)
         self.btn_run.pack(pady=10)
 
-        # 5. Confirmation label
+        # 6. Confirmation label
         self.label_confirmation=ctk.CTkLabel(self, text="")
         self.label_confirmation.pack(pady=5)
+
+    def checkbox_event(self):
+        if self.all_pages_var.get() == 1:
+            self.page_entry.delete(0, "end")
+            self.page_entry.configure(state="disabled", fg_color="#CBCBCB")
+        else:
+            self.page_entry.configure(state="normal", fg_color=["#F9F9FA", "#343638"])
+
 
     def open_main_screen(self):
         next_window = PdParser()
@@ -110,10 +121,13 @@ class ComponentPdParser(ctk.CTk):
                 self.lbl_file_status.configure(text=f"Selected: {file_name}", text_color="blue")
     
     def run_parser(self):
-        # SAFETY CHECKS
+        # ___________________________ SAFETY CHECKS ___________________________
         if not self.selected_file_path:
             self.lbl_file_status.configure(text="ERROR: Please select a file first.", text_color="red")
             return
+
+        if not self.page_entry and not self.chk_all_pages:
+            self.label_confirmation.configure(text="Please choose a page or confirm the checkbox", color="red")
 
         pdf = fitz.open(self.selected_file_path)
 
