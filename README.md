@@ -15,9 +15,6 @@ Usual:
 
 ## Project deadlines:
 
-* Implementation of multiple-page parsing on Components               []
---- Deadline: 19/06/2026
-
 * Implementation of Wire parsing                                      []
 --- Deadline: 22/06/2026
 
