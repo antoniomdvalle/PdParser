@@ -46,10 +46,6 @@ class PdParser(ctk.CTk):
 
         next_window.mainloop()
 
-
-    
-
-
 class ComponentPdParser(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -57,8 +53,6 @@ class ComponentPdParser(ctk.CTk):
         self.title("Component Extraction - PdParser")
 
         self.iconbitmap("assets/icon.ico")
-
-
 
         # 0. Main screen button
         self.btn_main_screen=ctk.CTkButton(self, text="Back to main screen", command=self.open_main_screen)
@@ -73,31 +67,25 @@ class ComponentPdParser(ctk.CTk):
         self.lbl_file_status = ctk.CTkLabel(self, text="No file selected", text_color="gray")
         self.lbl_file_status.pack(pady=10)
 
-        # 3. Check if the user wants all pages
-        self.all_pages_var = ctk.IntVar(value=0)
-        self.chk_all_pages = ctk.CTkCheckBox(self, text="Extract from all pages", variable=self.all_pages_var, command=self.checkbox_event)
-        self.chk_all_pages.pack(pady=15)
-
-        # 4. Page number input
+        # 3. Page number input
         self.label_page_1=ctk.CTkLabel(self, text="Enter first (or only) page number:")
         self.label_page_1.pack(pady=10)
 
         self.page_entry_1=ctk.CTkEntry(self, placeholder_text="ex. 50")
         self.page_entry_1.pack(pady=5)
 
-
-        # 5. Page number input
+        # 4. Page number input
         self.label_page_2=ctk.CTkLabel(self, text="Enter the second page number (or leave 0 if unneeded):")
         self.label_page_2.pack(pady=10)
 
         self.page_entry_2=ctk.CTkEntry(self, placeholder_text="ex. 51")
         self.page_entry_2.pack(pady=5)
 
-        # 6. Run button
+        # 5. Run button
         self.btn_run = ctk.CTkButton(self, text="Extract components", command=self.run_parser)
         self.btn_run.pack(pady=10)
 
-        # 7. Confirmation label
+        # 6. Confirmation label
         self.label_confirmation=ctk.CTkLabel(self, text="")
         self.label_confirmation.pack(pady=5)
 
@@ -110,7 +98,6 @@ class ComponentPdParser(ctk.CTk):
         else:
             self.page_entry_1.configure(state="normal", fg_color=["#F9F9FA", "#343638"],placeholder_text="ex. 50")
             self.page_entry_2.configure(state="normal", fg_color=["#F9F9FA", "#343638"],placeholder_text="ex. 51")
-
 
     def open_main_screen(self):
         next_window = PdParser()
@@ -141,59 +128,43 @@ class ComponentPdParser(ctk.CTk):
             self.lbl_file_status.configure(text="ERROR: Please select a file first.", text_color="red")
             return
 
-
         # OPEN THE FILE
         pdf = fitz.open(self.selected_file_path)
         total_pages = len(pdf)
         all_found_components = []
+        text = ""
 
-        page_num_raw = self.page_entry_1.get()
-        page_num_raw_2 = self.page_entry_2.get()
+        start_page_raw = self.page_entry_1.get()
+        end_page_raw = self.page_entry_2.get()
 
-        # EXTRACT FROM ALL PAGES
-        if self.all_pages_var.get() == 1:
-            start_page = 1
-            end_page = total_pages
-#            for page in pdf:
-#                text = page.get_text()
-#                all_found_components.extend(self.search_components_from_text(text))
+        if not start_page_raw.isdigit() or not end_page_raw.isdigit():
+            self.lbl_file_status.configure(text="ERROR: Pages must be valid numbers", text_color="red")
+            return
 
-        else:
+        start_page = int(start_page_raw) - 1
+        end_page = int(end_page_raw)
 
-            start_raw = self.page_entry_1.get()
-            end_raw = self.page_entry_2.get()
+        print(f"Starting page: {start_page}.")
 
-
-            if not start_raw.isdigit() or not end_raw.isdigit():
-                self.lbl_file_status.configure(text="ERROR: Pages must be valid numbers")
-                return
+        if end_page == 0:
+            text = pdf[start_page].get_text()
+            all_found_components = self.search_components_from_text(text)
 
 
-            start_page = int(start_raw)
-            end_page = int(end_raw)
-
-            if not page_num_raw.isdigit() or not page_num_raw_2.isdigit():
-                self.lbl_file_status.configure(text="ERROR: Please type a valid page number!", text_color="red")
-                return
-
-            if page_num_raw_2 == 0:
-                pass
-
-            page_num = int(page_num_raw)
-            page_num_2 = int(page_num_raw_2)
-
-            if page_num < 1 or page_num > len(pdf):
-                self.lbl_file_status.configure(text=f"ERROR: Page {int(page_num)} is out of range.", text_color="red")
+        else: 
+            if start_page < 1 or start_page > len(pdf):
+                self.lbl_file_status.configure(text=f"ERROR: Page {int(start_page)} is out of range.", text_color="red")
                 return []
             
             
-            if page_num_2 < 1 or page_num_2 > len(pdf):
-                self.lbl_file_status.configure(text=f"ERROR: Page {int(page_num_2)} is out of range.", text_color="red")
+            if end_page < 0 or end_page > len(pdf):
+                self.lbl_file_status.configure(text=f"ERROR: Page {int(end_page)} is out of range.", text_color="red")
                 return []
 
-
             
-            text = pdf[page_num - 1].get_text()
+            for page in range(start_page, end_page):
+                text += pdf[page].get_text()
+
             all_found_components = self.search_components_from_text(text)
 
         
@@ -203,18 +174,18 @@ class ComponentPdParser(ctk.CTk):
 
         df = pd.DataFrame(all_found_components, columns=['Components'])
 
+
         # WHITELIST
-        valid_prefixes = (
-            '1','2','3','4','5','6','7','8','9','0','K', 'Q', 'M', 'F', 'X', '1CX', '2CX', 'S', 'L', 'CLP', 
-            'PLC', 'IHM', 'HMI', 'TX', 'B', 'G', 'ED', 'EA','RL','RLS', 'F', 'IF', 'SW', 'FT'
-        )
+        valid_prefixes = ('1','2','3','4','5','6','7','8','9','0','K', 'Q', 'M', 'F', 'X', '1CX', '2CX', 
+            'S', 'L', 'CLP', 'PLC', 'IHM', 'HMI', 'TX', 'B', 'G', 'ED', 'EA','RL','RLS', 'F', 'IF', 'SW', 'FT')
+        
         df = df[df['Components'].str.startswith(valid_prefixes, na=False)]
 
         #BLACKLIST
         invalid_terms = [
             # --- SINGLE LETTERS / SHORT NOISE ---
             # Grid layout coordinates, single zones, or stray letters
-            'B', 'F', 'M',
+            'B', 'F', 'M', 'G',
 
             # --- DIMENSIONS & GEOMETRY ---
             # Measurements, physical scales, and sheet sizes
@@ -241,7 +212,8 @@ class ComponentPdParser(ctk.CTk):
 
             # --- ELECTRICAL & HARDWARE MATERIALS ---
             # Text descriptors next to physical components
-            'ALUM', 'CABO', 'CHAVE', 'COBRE', 'DISJ', 'FIOS', 'PVC', 'TERM', '16A',
+            'ALUM', 'CABO', 'CHAVE', 'COBRE', 'DISJ', 'FIOS', 'PVC', 'TERM', '16A', 'FURO',
+            '220VAC', '22MM', '20A', '1000V', '10V', '5V', '60HZ',
 
             # --- REVISIONS & NOTES ---
             # Review fields and side annotations
@@ -253,6 +225,7 @@ class ComponentPdParser(ctk.CTk):
             'COM', 'DAS', 'DOS', 'EMA', 'ETA', 'PARA', 'PELO', 'PELOS', 'POR', 
             'SEM', 'SER', 'SEUS', 'SOB', 'SOBRE', 'SUA', 'SUAS', 'UM', 'UMA'
         ]
+
         df = df[~df['Components'].isin(invalid_terms)]
 
 
@@ -267,8 +240,10 @@ class ComponentPdParser(ctk.CTk):
 
         subprocess.Popen(f'explorer /select,"{saida}"')
 
-        self.label_confirmation.configure(text="Conversion ocurred sucessfully!")
-        
+        self.label_confirmation.configure(text=f"Conversion sucessfull, valid components found: {len(df)}.", text_color="green")
+
+        text = ""
+
 class WirePdParser(ctk.CTk):
     def __init__(self):
         super().__init__()
