@@ -15,8 +15,4 @@ Usual:
 
 ## Project deadlines:
 
-* Implementation of Wire parsing                                      []
---- Deadline: 22/06/2026
-
-* Implementation of error checking                                    []
---- Deadline: 31/06/2026
+Everything up-t-date for release.
