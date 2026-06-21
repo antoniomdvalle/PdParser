@@ -6,10 +6,20 @@ import os
 import re
 import subprocess
 from pathlib import Path
+import sys
 
 # theme and appearance
 ctk.set_default_color_theme("dark-blue") # blue, green, dark-blue
 ctk.set_appearance_mode("system") # dark, light, system
+
+def resource_path(relative: str) -> Path:
+    base = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
+    return base / relative
+
+def app_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).parent
+    return Path(__file__).parent
 
 
 class PdParser(ctk.CTk):
@@ -17,7 +27,10 @@ class PdParser(ctk.CTk):
         super().__init__()
         self.geometry("600x450")
         self.title("PdParser")
-        self.iconbitmap("assets/icon.ico")
+
+        icon_path = resource_path("assets/icon.ico")
+        logo_path = resource_path("assets/logo.png")
+        self.iconbitmap(icon_path)
 
         self.lbl_title=ctk.CTkLabel(self, text="Welcome!")
         self.lbl_title.pack(pady=50)
@@ -31,6 +44,8 @@ class PdParser(ctk.CTk):
 
         self.btn_acess_wires=ctk.CTkButton(self, text="Extract wires", command=self.open_wires)
         self.btn_acess_wires.pack(pady=15)
+
+
 
     def open_components(self):
         next_window = ComponentPdParser()
@@ -52,7 +67,9 @@ class ComponentPdParser(ctk.CTk):
         self.geometry("600x450")
         self.title("Component Extraction - PdParser")
 
-        self.iconbitmap("assets/icon.ico")
+        icon_path = resource_path("assets/icon.ico")
+        logo_path = resource_path("assets/logo.png")
+        self.iconbitmap(icon_path)
 
         # 0. Main screen button
         self.btn_main_screen=ctk.CTkButton(self, text="Back to main screen", command=self.open_main_screen)
@@ -224,7 +241,7 @@ class ComponentPdParser(ctk.CTk):
         df.sort_values(by='Components', inplace=True) # se quiser de Z-A, bota inplace=False
         df.to_excel("components.xlsx", index=False, header=False)
 
-        output_path = Path("components.xlsx").resolve()
+        output_path = app_dir() / "components.xlsx"
 
         print("Converted sucessfully.")
 
@@ -240,7 +257,9 @@ class WirePdParser(ctk.CTk):
         self.geometry("600x450")
         self.title("Wire PdParser")
         
-        self.iconbitmap("assets/icon.ico")
+        icon_path = resource_path("assets/icon.ico")
+        logo_path = resource_path("assets/logo.png")
+        self.iconbitmap(icon_path)
 
 
 
@@ -406,7 +425,7 @@ class WirePdParser(ctk.CTk):
         df.sort_values(by='Wires', inplace=True)
         df.to_excel("wires.xlsx", index=False, header=False)
 
-        output_path = Path("components.xlsx").resolve()
+        output_path = app_dir() / "wires.xlsx"
 
         print("Converted sucessfully.")
 
