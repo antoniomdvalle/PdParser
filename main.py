@@ -67,14 +67,14 @@ class ComponentPdParser(ctk.CTk):
         self.lbl_file_status = ctk.CTkLabel(self, text="No file selected", text_color="gray")
         self.lbl_file_status.pack(pady=10)
 
-        # 3. Page number input
+        # 3. Page number input 1
         self.label_page_1=ctk.CTkLabel(self, text="Enter first (or only) page number:")
         self.label_page_1.pack(pady=10)
 
         self.page_entry_1=ctk.CTkEntry(self, placeholder_text="ex. 50")
         self.page_entry_1.pack(pady=5)
 
-        # 4. Page number input
+        # 4. Page number input 2
         self.label_page_2=ctk.CTkLabel(self, text="Enter the second page number (or leave 0 if unneeded):")
         self.label_page_2.pack(pady=10)
 
@@ -88,16 +88,6 @@ class ComponentPdParser(ctk.CTk):
         # 6. Confirmation label
         self.label_confirmation=ctk.CTkLabel(self, text="")
         self.label_confirmation.pack(pady=5)
-
-    def checkbox_event(self):
-        if self.all_pages_var.get() == 1:
-            self.page_entry_1.delete(0, "end")
-            self.page_entry_2.delete(0, "end")
-            self.page_entry_1.configure(state="disabled", fg_color="#CBCBCB")
-            self.page_entry_2.configure(state="disabled", fg_color="#CBCBCB")
-        else:
-            self.page_entry_1.configure(state="normal", fg_color=["#F9F9FA", "#343638"],placeholder_text="ex. 50")
-            self.page_entry_2.configure(state="normal", fg_color=["#F9F9FA", "#343638"],placeholder_text="ex. 51")
 
     def open_main_screen(self):
         next_window = PdParser()
@@ -234,11 +224,11 @@ class ComponentPdParser(ctk.CTk):
         df.sort_values(by='Components', inplace=True) # se quiser de Z-A, bota inplace=False
         df.to_excel("components.xlsx", index=False, header=False)
 
-        saida = Path("components.xlsx").resolve()
+        output_path = Path("components.xlsx").resolve()
 
         print("Converted sucessfully.")
 
-        subprocess.Popen(f'explorer /select,"{saida}"')
+        subprocess.Popen(f'explorer /select,"{output_path}"')
 
         self.label_confirmation.configure(text=f"Conversion sucessfull, valid components found: {len(df)}.", text_color="green")
 
@@ -267,7 +257,31 @@ class WirePdParser(ctk.CTk):
         self.lbl_file_status = ctk.CTkLabel(self, text="No file selected", text_color="gray")
         self.lbl_file_status.pack(pady=10)
 
+        # 3. Page number input 1
+        self.label_page_1=ctk.CTkLabel(self, text="Enter first (or only) page number:")
+        self.label_page_1.pack(pady=10)
 
+        self.page_entry_1=ctk.CTkEntry(self, placeholder_text="ex. 50")
+        self.page_entry_1.pack(pady=5)
+
+        # 4. Page number input 2
+        self.label_page_2=ctk.CTkLabel(self, text="Enter the second page number (or leave 0 if unneeded):")
+        self.label_page_2.pack(pady=10)
+
+        self.page_entry_2=ctk.CTkEntry(self, placeholder_text="ex. 51")
+        self.page_entry_2.pack(pady=5)
+
+        # 5. Run button
+        self.btn_run = ctk.CTkButton(self, text="Extract components", command=self.run_parser)
+        self.btn_run.pack(pady=10)
+
+        # 6. Confirmation label
+        self.label_confirmation=ctk.CTkLabel(self, text="")
+        self.label_confirmation.pack(pady=5)
+
+    def search_wires_from_text(self, text):
+        pattern = r'\b\d*[A-Z]{1,4}\d*\b'
+        return re.findall(pattern, text)
 
     def open_main_screen(self):
         next_window = PdParser()
@@ -288,7 +302,120 @@ class WirePdParser(ctk.CTk):
                 file_name = os.path.basename(file_path)
                 self.lbl_file_status.configure(text=f"Selected: {file_name}", text_color="white")
                 print(f"File loaded: {file_path}")
-    
+
+    def run_parser(self):
+
+        # OPEN THE FILE
+        pdf = fitz.open(self.selected_file_path)
+        total_pages = len(pdf)
+        all_found_wires = []
+        text = ""
+
+        start_page_raw = self.page_entry_1.get()
+        end_page_raw = self.page_entry_2.get()
+
+        if not start_page_raw.isdigit() or not end_page_raw.isdigit():
+            self.lbl_file_status.configure(text="ERROR: Pages must be valid numbers", text_color="red")
+            return
+
+        start_page = int(start_page_raw) - 1
+        end_page = int(end_page_raw)
+
+        print(f"Starting page: {start_page}.")
+
+        if end_page == 0:
+            text = pdf[start_page].get_text()
+            all_found_wires = self.search_wires_from_text(text)
+
+
+        else: 
+            if start_page < 1 or start_page > len(pdf):
+                self.lbl_file_status.configure(text=f"ERROR: Page {int(start_page)} is out of range.", text_color="red")
+                return []
+            
+            
+            if end_page < 0 or end_page > len(pdf):
+                self.lbl_file_status.configure(text=f"ERROR: Page {int(end_page)} is out of range.", text_color="red")
+                return []
+
+            
+            for page in range(start_page, end_page):
+                text += pdf[page].get_text()
+
+            all_found_wires = self.search_wires_from_text(text)
+            print("Searched wires from text")
+
+        #WHITELIST
+        df = pd.DataFrame(all_found_wires, columns=['Wires'])
+
+        valid_prefixes = ('0','1','2','3','4','5','6','7','8','9', 'PE', 'L' )
+
+        df = df[df['Wires'].str.startswith(valid_prefixes, na=False)]
+
+        #BLACKLIST
+        invalid_terms = [
+            # --- SINGLE LETTERS / SHORT NOISE ---
+            # Grid layout coordinates, single zones, or stray letters
+            'B', 'F', 'M', 'G',
+
+            # --- DIMENSIONS & GEOMETRY ---
+            # Measurements, physical scales, and sheet sizes
+            'A2', 'A3', 'A4', 'ESCALA', 'FORMATO', 'GRAU', 'KM', 'LxA', 'MM',
+
+            # --- CORPORATE & REGISTERED ACRONYMS ---
+            # Legal structures, corporate IDs, and professional registries
+            'CEP', 'CNPJ', 'CREA', 'IE', 'INC', 'LTDA',
+
+            # --- BRAZILIAN STATES ---
+            # Address data from title blocks or manufacturer registries
+            'BA', 'BR', 'CE', 'GO', 'MG', 'PE', 'PR', 'RJ', 'RS', 'SC', 'SP',
+
+            # --- LOCATION & ADDRESS TERMS ---
+            # Map navigation data from layout corners
+            'AV', 'AVENIDA', 'BAIRRO', 'CIDADE', 'LOGRADOURO', 'MUNICIPIO', 
+            'NRO', 'NUM', 'RUA', 'BRASIL',
+
+            # --- PROJECT METADATA & CONTROL ---
+            # Standard schematic frame data fields
+            'APROV', 'APROVADO', 'CLIENTE', 'DATA', 'DESC', 'DESCRICAO', 
+            'DESENHADO', 'DESENHO', 'EMISSAO', 'NOME', 'PROJETO', 'TITULO', 
+            'VISTO',
+
+            # --- ELECTRICAL & HARDWARE MATERIALS ---
+            # Text descriptors next to physical components
+            'ALUM', 'CABO', 'CHAVE', 'COBRE', 'DISJ', 'FIOS', 'PVC', 'TERM', '16A', 'FURO',
+            '220VAC', '22MM', '20A', '1000V', '10V', '5V', '60HZ',
+
+            # --- REVISIONS & NOTES ---
+            # Review fields and side annotations
+            'CONF', 'CONFORME', 'ITEM', 'NOTA', 'NOTAS', 'OBS', 'SEQ', 'SET', 
+            'VEJA', 'VER',
+
+            # --- PORTUGUESE WORDS ---
+            # Grammar elements caught from structural strings
+            'COM', 'DAS', 'DOS', 'EMA', 'ETA', 'PARA', 'PELO', 'PELOS', 'POR', 
+            'SEM', 'SER', 'SEUS', 'SOB', 'SOBRE', 'SUA', 'SUAS', 'UM', 'UMA'
+        ]
+
+        df = df[~df['Wires'].isin(invalid_terms)]
+
+        df = pd.concat([df[['Wires']], df[['Wires']]], ignore_index=True)
+
+        print(f"Valid components: {len(df)}")
+
+        df.sort_values(by='Wires', inplace=True)
+        df.to_excel("wires.xlsx", index=False, header=False)
+
+        output_path = Path("components.xlsx").resolve()
+
+        print("Converted sucessfully.")
+
+        subprocess.Popen(f'explorer /select,"{output_path}"')
+
+        self.label_confirmation.configure(text=f"Conversion sucessfull, valid components found: {len(df)}.", text_color="green")
+
+        text = ""
+
 
 if __name__ == "__main__":
     app = PdParser()
