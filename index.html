@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>PdParser</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <link rel="icon" href="assets/icon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <h2>PdParser - Extração de Componentes & Fios</h2>
+
+  <div class="box">
+    <input type="file" id="pdfInput" accept="application/pdf" />
+  </div>
+
+  <div class="options">
+    <label>Página Início:</label>
+    <input type="number" id="startPage" value="1" min="1"/>
+    
+    <label>Página Fim (0 = só início):</label>
+    <input type="number" id="endPage" value="0" min="0" />
+  </div>
+
+  <div class="options">
+    <label><strong>Modo de Extração:</strong></label>
+    <input type="radio" id="modeComponents" name="extractMode" value="components" checked>
+    <label for="modeComponents">Componentes (A-Z)</label>
+
+    <input type="radio" id="modeWires" name="extractMode" value="wires">
+    <label for="modeWires"> Cabos </label>
+  </div>
+
+  <button onclick="processPDF()">Processar PDF</button>
+  <button id="btnDownload" onclick="downloadCSV()" disabled>Baixar .CSV</button>
+
+  <h3>Resultado:</h3>
+  <textarea id="output" readonly></textarea>
+  <script src="main.js"></script>
+</body>
+</html>

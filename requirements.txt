@@ -1,6 +1,0 @@
-pymupdf
-pdfplumber
-pandas
-openpyxl
-customtkinter
-pyinstaller
